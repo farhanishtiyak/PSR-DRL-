@@ -1,0 +1,16 @@
+RLBEEP Simulation Results
+==================================================
+
+Number of Nodes: 100
+Number of Clusters: 40
+Simulation Duration: 3534/5000 seconds
+
+First Node Death Time: 2215
+Final Live Node Percentage: 0.0%
+
+Network Statistics:
+------------------------------
+Total Data Transmissions: 270
+Average Transmissions per Second: 0.08
+Average Remaining Energy: 0.00 J
+Energy Efficiency: 1.00

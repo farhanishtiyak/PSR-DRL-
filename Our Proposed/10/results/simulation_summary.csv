@@ -1,0 +1,9 @@
+Parameter,Value
+Nodes,10.0
+Clusters,4.0
+Simulation_Duration,2054.0
+First_Death_Time,1525.0
+Final_Live_Percentage,0.0
+Total_Transmissions,7.0
+Avg_Energy_Remaining,0.0
+Energy_Efficiency,1.0

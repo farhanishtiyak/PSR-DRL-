@@ -1,0 +1,287 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+import numpy as np
+import os
+
+# Set up matplotlib for better plots
+plt.styldef plot_network_lifetime_comparison():
+    """Plot network lifetime comparison over time"""
+    # Load data
+    competitor_df = load_competitor_data()
+    proposed_data = load_proposed_data()
+    eerrl_df = load_eerrl_data()
+    network_df, _ = proposed_data
+    
+    fig, ax = plt.subplots(figsize=(12, 8))
+    
+    # Plot competitor data
+    if competitor_df is not None and 'Time' in competitor_df.columns and 'Live_Node_Percentage' in competitor_df.columns:
+        ax.plot(competitor_df['Time'], competitor_df['Live_Node_Percentage'], 
+               label='RLBEEP', color='#ff7f0e', linewidth=1.5)
+    
+    # Plot proposed data
+    if network_df is not None and 'time' in network_df.columns and 'live_percentage' in network_df.columns:
+        ax.plot(network_df['time'], network_df['live_percentage'], 
+               label='PSWR-DRL', color='#2ca02c', linewidth=1.5)
+               
+    # Plot EER-RL data
+    if eerrl_df is not None and 'Times' in eerrl_df.columns and 'OperatingNodes' in eerrl_df.columns:
+        # Convert OperatingNodes to percentage (assuming max is 10 nodes)
+        eerrl_percentage = (eerrl_df['OperatingNodes'] / 10) * 100
+        ax.plot(eerrl_df['Times'], eerrl_percentage, 
+               label='EER-RL', color='#1f77b4', linewidth=1.5)lt.rcParams['figure.figsize'] = (12, 8)
+plt.rcParams['font.size'] = 12
+plt.rcParams['axes.grid'] = True
+plt.rcParams['grid.alpha'] = 0.3
+
+def load_competitor_data():
+    """Load competitor simulation data"""
+    competitor_file = 'rlbeep_simulation_data.csv'
+    if not os.path.exists(competitor_file):
+        print(f"Warning: {competitor_file} not found")
+        return None
+    
+    df = pd.read_csv(competitor_file)
+    return df
+
+def load_proposed_data():
+    """Load proposed method data"""
+    # Load network lifetime data
+    network_file = 'our_proposed_simulation_data.csv'
+    
+    network_df = None
+    
+    if os.path.exists(network_file):
+        network_df = pd.read_csv(network_file)
+    else:
+        print(f"Warning: {network_file} not found")
+    
+    return network_df, None
+
+def load_eerrl_data():
+    """Load EER-RL simulation data"""
+    eerrl_file = 'eerrl_simulation_data.csv'
+    if not os.path.exists(eerrl_file):
+        print(f"Warning: {eerrl_file} not found")
+        return None
+    
+    df = pd.read_csv(eerrl_file)
+    return df
+
+def extract_first_death_time(df, method_type):
+    """Extract first node death time from data"""
+    if method_type == 'competitor':
+        # For competitor data, find when Live_Node_Percentage first drops below 100%
+        if df is not None and 'Live_Node_Percentage' in df.columns:
+            first_death_idx = df[df['Live_Node_Percentage'] < 100].index
+            if len(first_death_idx) > 0:
+                return df.loc[first_death_idx[0], 'Time']
+        return None
+    
+    elif method_type == 'proposed':
+        # For proposed data, find when live_percentage first drops below 100%
+        network_df, death_df = df
+        if network_df is not None and 'live_percentage' in network_df.columns:
+            first_death_idx = network_df[network_df['live_percentage'] < 100].index
+            if len(first_death_idx) > 0:
+                return network_df.loc[first_death_idx[0], 'time']
+        return None
+                
+    elif method_type == 'eerrl':
+        # For EER-RL data, find when OperatingNodes first drops below 10
+        if df is not None and 'OperatingNodes' in df.columns:
+            first_death_idx = df[df['OperatingNodes'] < 10].index
+            if len(first_death_idx) > 0:
+                return df.loc[first_death_idx[0], 'Times']
+        return None
+
+def plot_first_node_death_comparison():
+    """Plot comparison of first node death times"""
+    # Load data
+    competitor_df = load_competitor_data()
+    proposed_data = load_proposed_data()
+    eerrl_df = load_eerrl_data()
+    
+    # Extract first death times
+    competitor_first_death = extract_first_death_time(competitor_df, 'competitor')
+    proposed_first_death = extract_first_death_time(proposed_data, 'proposed')
+    eerrl_first_death = extract_first_death_time(eerrl_df, 'eerrl')
+    
+    # Create the plot
+    fig, ax = plt.subplots(figsize=(12, 6))
+    
+    methods = []
+    death_times = []
+    colors = []
+    
+    if competitor_first_death is not None:
+        methods.append('RLBEEP')
+        death_times.append(competitor_first_death)
+        colors.append('#ff7f0e')  # Orange
+    
+    if proposed_first_death is not None:
+        methods.append('PSWR-DRL')
+        death_times.append(proposed_first_death)
+        colors.append('#2ca02c')  # Green
+        
+    if eerrl_first_death is not None:
+        methods.append('EER-RL')
+        death_times.append(eerrl_first_death)
+        colors.append('#1f77b4')  # Blue
+    
+    if len(methods) > 0:
+        bars = ax.bar(methods, death_times, color=colors, alpha=0.7, edgecolor='black', linewidth=1, width=0.6)
+        
+        # Add value labels on bars
+        for bar, value in zip(bars, death_times):
+            height = bar.get_height()
+            ax.text(bar.get_x() + bar.get_width()/2., height + height*0.01,
+                   f'{value:.0f}', ha='center', va='bottom', fontweight='bold')
+        
+        ax.set_ylabel('Time (simulation steps)', fontweight='bold')
+        ax.set_title('First Node Death Time Comparison\n10-Node Wireless Sensor Network', 
+                    fontweight='bold', fontsize=14)
+        ax.grid(True, alpha=0.3)
+    else:
+        ax.text(0.5, 0.5, 'No data available for comparison', 
+               ha='center', va='center', transform=ax.transAxes, fontsize=14)
+    
+    plt.tight_layout()
+    return fig
+
+def plot_network_lifetime_comparison():
+    """Plot network lifetime comparison over time"""
+    # Load data
+    competitor_df = load_competitor_data()
+    proposed_data = load_proposed_data()
+    network_df, _ = proposed_data
+    
+    fig, ax = plt.subplots(figsize=(12, 8))
+    
+    # Plot competitor data
+    if competitor_df is not None and 'Time' in competitor_df.columns and 'Live_Node_Percentage' in competitor_df.columns:
+        ax.plot(competitor_df['Time'], competitor_df['Live_Node_Percentage'], 
+               label='Traditional RLBEEP', color='#ff7f0e', linewidth=1.5)
+    
+    # Plot proposed data
+    if network_df is not None and 'time' in network_df.columns and 'live_percentage' in network_df.columns:
+        ax.plot(network_df['time'], network_df['live_percentage'], 
+               label='DQL-Enhanced RLBEEP', color='#2ca02c', linewidth=1.5)
+    
+    ax.set_xlabel('Time (simulation steps)', fontweight='bold')
+    ax.set_ylabel('Live Node Percentage (%)', fontweight='bold')
+    ax.set_title('Network Lifetime Comparison\n10-Node Wireless Sensor Network', 
+                fontweight='bold', fontsize=14)
+    ax.legend(fontsize=12, loc='best')
+    ax.grid(True, alpha=0.3)
+    ax.set_ylim(0, 105)
+    
+    # Ensure lines appear with equal thickness in both directions
+    ax.set_aspect('auto')
+    
+    # Add network lifetime statistics
+    if competitor_df is not None and network_df is not None:
+        # Find when each network reaches 50% nodes alive
+        comp_50_percent = competitor_df[competitor_df['Live_Node_Percentage'] <= 50]
+        prop_50_percent = network_df[network_df['live_percentage'] <= 50]
+        
+        if len(comp_50_percent) > 0 and len(prop_50_percent) > 0:
+            comp_50_time = comp_50_percent.iloc[0]['Time']
+            prop_50_time = prop_50_percent.iloc[0]['time']
+            
+            ax.axhline(y=50, color='red', linestyle='--', alpha=0.7, label='50% Network Survival')
+            ax.axvline(x=comp_50_time, color='#ff7f0e', linestyle=':', alpha=0.7)
+            ax.axvline(x=prop_50_time, color='#2ca02c', linestyle=':', alpha=0.7)
+            
+            improvement_50 = ((prop_50_time - comp_50_time) / comp_50_time) * 100
+            ax.text(0.02, 0.98, f'50% Survival Time Improvement: {improvement_50:+.1f}%', 
+                   transform=ax.transAxes, va='top', ha='left', fontsize=11, fontweight='bold',
+                   bbox=dict(boxstyle='round,pad=0.3', facecolor='lightblue', alpha=0.7))
+    
+    plt.tight_layout()
+    return fig
+
+def generate_summary_statistics():
+    """Generate and print summary statistics"""
+    print("="*60)
+    print("NETWORK PERFORMANCE COMPARISON SUMMARY")
+    print("="*60)
+    
+    # Load data
+    competitor_df = load_competitor_data()
+    proposed_data = load_proposed_data()
+    network_df, death_df = proposed_data
+    
+    # First node death time analysis
+    competitor_first_death = extract_first_death_time(competitor_df, 'competitor')
+    proposed_first_death = extract_first_death_time(proposed_data, 'proposed')
+    
+    print("\n1. FIRST NODE DEATH TIME ANALYSIS:")
+    print("-" * 40)
+    if competitor_first_death is not None:
+        print(f"Traditional RLBEEP: {competitor_first_death:.0f} time steps")
+    if proposed_first_death is not None:
+        print(f"DQL-Enhanced RLBEEP: {proposed_first_death:.0f} time steps")
+    
+    if competitor_first_death is not None and proposed_first_death is not None:
+        improvement = ((proposed_first_death - competitor_first_death) / competitor_first_death) * 100
+        print(f"Improvement: {improvement:+.2f}%")
+    
+    # Network lifetime analysis
+    print("\n2. NETWORK LIFETIME ANALYSIS:")
+    print("-" * 40)
+    
+    if competitor_df is not None:
+        final_time_comp = competitor_df['Time'].max()
+        final_percentage_comp = competitor_df['Live_Node_Percentage'].iloc[-1]
+        print(f"Traditional RLBEEP - Final time: {final_time_comp:.0f}, Final live %: {final_percentage_comp:.1f}%")
+    
+    if network_df is not None:
+        final_time_prop = network_df['time'].max()
+        final_percentage_prop = network_df['live_percentage'].iloc[-1]
+        print(f"DQL-Enhanced RLBEEP - Final time: {final_time_prop:.0f}, Final live %: {final_percentage_prop:.1f}%")
+    
+    # Node death pattern analysis
+    if death_df is not None and 'Death_Time' in death_df.columns:
+        print("\n3. NODE DEATH PATTERN (Proposed Method):")
+        print("-" * 40)
+        print(f"Total nodes died: {len(death_df)}")
+        print(f"Average death time: {death_df['Death_Time'].mean():.1f}")
+        print(f"Standard deviation: {death_df['Death_Time'].std():.1f}")
+        
+        # Death by node type
+        if 'Node_Type' in death_df.columns:
+            death_by_type = death_df['Node_Type'].value_counts()
+            print(f"Deaths by type: {dict(death_by_type)}")
+
+def main():
+    """Main function to generate all plots and analysis"""
+    print("Generating 10-Node Network Performance Comparison...")
+    
+    # Change to the correct directory
+    os.chdir('/home/ishtiyak/Desktop/Thesis/rlbeep-30/Comparison/10')
+    
+    # Generate summary statistics
+    generate_summary_statistics()
+    
+    # Create plots
+    print("\nGenerating plots...")
+    
+    # Plot 1: First node death time comparison
+    fig1 = plot_first_node_death_comparison()
+    fig1.savefig('first_node_death_comparison.png', dpi=300, bbox_inches='tight')
+    print("✓ First node death comparison plot saved as 'first_node_death_comparison.png'")
+    
+    # Plot 2: Network lifetime comparison
+    fig2 = plot_network_lifetime_comparison()
+    fig2.savefig('network_lifetime_comparison.png', dpi=300, bbox_inches='tight')
+    print("✓ Network lifetime comparison plot saved as 'network_lifetime_comparison.png'")
+    
+    # Show plots
+    plt.show()
+    
+    print("\nComparison analysis completed!")
+    print("Check the generated PNG files for detailed visualizations.")
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,8 @@
+Parameter,Value
+Num_Nodes,50
+Num_Clusters,20
+Network_Area,150.0x150.0
+Send_Range,25
+Total_Time,3000
+First_Death_Time,1301
+Final_Live_Percentage,0.0

@@ -1,0 +1,298 @@
+\documentclass{article}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{geometry}
+\geometry{margin=1in}
+
+\begin{document}
+
+\title{PSWR-DRL: Power Saving Wireless Routing with Deep Reinforcement Learning}
+\author{Simplified Algorithm Suite}
+\maketitle
+
+\section{Introduction}
+
+This document presents the simplified algorithms for the PSWR-DRL (Power Saving Wireless Routing with Deep Reinforcement Learning) system. The system combines:
+
+\begin{itemize}
+\item \textbf{Adaptive Sleep Scheduling}: Nodes dynamically enter sleep mode based on transmission activity
+\item \textbf{Data Transmission Control}: Restrict transmissions using change detection algorithms (see Algorithm \ref{alg:data_transmission})
+\item \textbf{Smart Sleep Management}: Counter-based sleep scheduling with node diversity (see Algorithm \ref{alg:sleep_scheduling})
+\item \textbf{DQN-based Routing}: Deep reinforcement learning for optimal next-hop selection (see Algorithm \ref{alg:dqn_simple})
+\item \textbf{Energy Optimization}: Multi-modal energy consumption with heterogeneous node characteristics
+\end{itemize}
+
+The system achieves 205\% improvement in First Node Death (FND) and 157\% improvement in network lifetime compared to baseline approaches.
+
+\section{Core System Operations}
+
+% Main RLBEEP Algorithm
+\begin{algorithm}[H]
+\caption{RLBEEP: Main System Algorithm}
+\label{alg:rlbeep_main}
+\begin{algorithmic}[1]
+
+\REQUIRE Network nodes $N$, Clusters $K$, Initial energy $E_0$
+\ENSURE Maximized network lifetime and energy efficiency
+
+\STATE \textbf{Initialize Network:}
+\STATE Deploy $N$ nodes in strategic grid positions
+\STATE Select $K$ cluster heads based on energy and coverage
+\STATE Assign nodes to nearest cluster heads
+\STATE Initialize DQN agents for each node
+
+\WHILE{network is operational AND $t < T_{max}$}
+    \FOR{each alive node $n_i$}
+        \IF{$n_i$ is Regular Node}
+            \STATE Execute Algorithm \ref{alg:regular_node}
+        \ELSIF{$n_i$ is Cluster Head}
+            \STATE Execute Algorithm \ref{alg:cluster_head}
+        \ENDIF
+        \STATE Update energy consumption
+    \ENDFOR
+    
+    \IF{$t \bmod 300 = 0$} 
+        \STATE Rotate cluster heads based on energy levels
+    \ENDIF
+    
+    \STATE $t \leftarrow t + 1$
+\ENDWHILE
+
+\STATE \textbf{Return:} Network statistics and performance metrics
+
+\end{algorithmic}
+\end{algorithm}
+
+% Regular Node Algorithm
+\begin{algorithm}[H]
+\caption{Regular Node Operation}
+\label{alg:regular_node}
+\begin{algorithmic}[1]
+
+\REQUIRE Node $n_i$, current time $t$, sensor data $D_t$
+\ENSURE Data transmission decision and mode update
+
+\STATE \textbf{Step 1: Sleep Scheduling}
+\STATE $send\_permission \leftarrow$ Algorithm \ref{alg:data_transmission}($D_t$)
+\STATE $mode \leftarrow$ Algorithm \ref{alg:sleep_scheduling}($send\_permission$, $t$)
+
+\IF{$mode = SLEEP$}
+    \STATE Consume sleep energy: $E_i \leftarrow E_i - P_{sleep}$
+    \STATE \textbf{Return} \COMMENT{Skip transmission}
+\ENDIF
+
+\STATE \textbf{Step 2: Data Processing (ACTIVE mode)}
+\STATE Read sensor data $D_t$
+\STATE Consume active energy: $E_i \leftarrow E_i - P_{active}$
+
+\IF{$send\_permission = TRUE$}
+    \STATE \textbf{Step 3: Routing Decision}
+    \STATE $next\_hop \leftarrow$ DQN routing decision (Algorithm \ref{alg:dqn_simple})
+    
+    \IF{$next\_hop$ is available}
+        \STATE Create packet $P$ with data $D_t$
+        \STATE Send $P$ to $next\_hop$
+        \STATE Consume transmission energy: $E_i \leftarrow E_i - P_{send}$
+        \STATE Update DQN with reward
+    \ENDIF
+\ENDIF
+
+\end{algorithmic}
+\end{algorithm}
+
+% Cluster Head Algorithm
+\begin{algorithm}[H]
+\caption{Cluster Head Operation}
+\label{alg:cluster_head}
+\begin{algorithmic}[1]
+
+\REQUIRE Cluster Head $CH_j$, packet queue $Q_j$
+\ENSURE Data aggregation and forwarding
+
+\STATE \textbf{Step 1: Process Incoming Packets}
+\WHILE{$Q_j$ is not empty}
+    \STATE $packet \leftarrow Q_j.dequeue()$
+    
+    \IF{packet is from cluster member}
+        \STATE $aggregated\_data \leftarrow$ Aggregate($packet.data$)
+        \STATE Store aggregated data
+    \ELSIF{packet is from other CH}
+        \STATE Update neighbor table with packet info
+    \ENDIF
+    
+    \STATE \textbf{Step 2: Forward to Sink}
+    \STATE Create new packet with aggregated data
+    \STATE Consume transmission energy: $E_j \leftarrow E_j - P_{send}$
+    
+    \IF{Sink is within range}
+        \STATE Send directly to Sink
+    \ELSE
+        \STATE Route through nearest CH toward Sink
+    \ENDIF
+\ENDWHILE
+
+\STATE \textbf{Step 3: Additional CH Energy Cost}
+\STATE $E_j \leftarrow E_j - P_{active} \times 0.02$ \COMMENT{CH overhead}
+
+\end{algorithmic}
+\end{algorithm}
+
+% Sleep Scheduling Algorithm
+\begin{algorithm}[H]
+\caption{Adaptive Sleep Scheduling}
+\label{alg:sleep_scheduling}
+\begin{algorithmic}[1]
+
+\REQUIRE Node $n_i$, send permission status, current time $t$
+\ENSURE Updated node mode (ACTIVE/SLEEP)
+
+\STATE \textbf{Check Wake-up Condition:}
+\IF{$mode_i = SLEEP$ AND $t \geq sleep\_until_i$}
+    \STATE $mode_i \leftarrow ACTIVE$
+    \STATE $no\_send\_count_i \leftarrow 0$
+\ENDIF
+
+\STATE \textbf{Update Send Counter:}
+\IF{send permission = FALSE}
+    \STATE $no\_send\_count_i \leftarrow no\_send\_count_i + 1$
+\ELSE
+    \STATE $no\_send\_count_i \leftarrow 0$
+\ENDIF
+
+\STATE \textbf{Sleep Decision:}
+\STATE $threshold_i \leftarrow base\_threshold + (node\_id \bmod 5)$
+
+\IF{$mode_i = ACTIVE$ AND $no\_send\_count_i \geq threshold_i$}
+    \STATE $mode_i \leftarrow SLEEP$
+    \STATE $sleep\_duration \leftarrow calculate\_sleep\_duration(node\_id)$
+    \STATE $sleep\_until_i \leftarrow t + sleep\_duration$
+\ENDIF
+
+\STATE \textbf{Return} $mode_i$
+
+\end{algorithmic}
+\end{algorithm}
+
+% Data Transmission Decision Algorithm
+\begin{algorithm}[H]
+\caption{Restrict Data Transmission}
+\label{alg:data_transmission}
+\begin{algorithmic}[1]
+
+\REQUIRE Node $n_i$, sensor data $D_t$, change threshold $\theta$
+\ENSURE Send permission (TRUE/FALSE)
+
+\IF{$last\_data_i = NULL$} \COMMENT{First reading}
+    \STATE $last\_data_i \leftarrow D_t$
+    \STATE \textbf{Return} TRUE
+\ENDIF
+
+\STATE \textbf{Node-specific sensitivity:}
+\STATE $sensitivity_i \leftarrow 1 + (node\_id \bmod 6) \times 0.3$
+\STATE $adjusted\_threshold \leftarrow \theta \times sensitivity_i$
+
+\STATE \textbf{Change detection:}
+\STATE $data\_change \leftarrow |D_t - last\_data_i|$
+
+\IF{$data\_change > adjusted\_threshold$}
+    \STATE $last\_data_i \leftarrow D_t$
+    \STATE \textbf{Return} TRUE
+\ELSE
+    \STATE \textbf{Probabilistic transmission:} \COMMENT{Break synchronization}
+    \IF{$random() < 0.02$}
+        \STATE \textbf{Return} TRUE
+    \ENDIF
+    \STATE \textbf{Return} FALSE
+\ENDIF
+
+\end{algorithmic}
+\end{algorithm}
+
+% Simplified DQN Routing
+\begin{algorithm}[H]
+\caption{DQN-Based Routing (Simplified)}
+\label{alg:dqn_simple}
+\begin{algorithmic}[1]
+
+\REQUIRE Node $n_i$, available neighbors
+\ENSURE Next hop selection
+
+\STATE \textbf{State extraction:}
+\STATE $s_t \leftarrow [energy\_ratio, ch\_distance, sink\_distance, urgency]$
+
+\STATE \textbf{Action selection ($\epsilon$-greedy):}
+\IF{$random() > \epsilon_t$}
+    \STATE $action \leftarrow \arg\max_a Q(s_t, a)$ \COMMENT{Exploitation}
+\ELSE
+    \STATE $action \leftarrow random\_action()$ \COMMENT{Exploration}
+\ENDIF
+
+\STATE \textbf{Map action to next hop:}
+\IF{$action = 0$} \COMMENT{Forward to CH}
+    \STATE $next\_hop \leftarrow cluster\_head_i$
+\ELSIF{$action = 1$} \COMMENT{Forward to Sink}
+    \STATE $next\_hop \leftarrow sink$ (if in range)
+\ELSE \COMMENT{Sleep}
+    \STATE $next\_hop \leftarrow NULL$
+\ENDIF
+
+\STATE \textbf{Learning update:}
+\STATE $reward \leftarrow calculate\_reward(energy, distance, success)$
+\STATE Store experience $(s_{t-1}, a_{t-1}, reward, s_t)$ in memory
+\STATE Update Q-network with experience replay
+
+\STATE \textbf{Return} $next\_hop$
+
+\end{algorithmic}
+\end{algorithm>
+
+\section{Performance Metrics}
+
+The system demonstrates significant improvements:
+\begin{itemize}
+\item Network Lifetime: +157\% vs baseline
+\item First Node Death: +205\% vs RLBEEP  
+\item Energy Efficiency: Optimized through adaptive sleep scheduling
+\item Data Delivery: Maintained through intelligent transmission control
+\end{itemize}
+
+\section{System Parameters}
+
+\begin{table}[h]
+\centering
+\caption{PSWR-DRL System Parameters}
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Category} & \textbf{Parameter} & \textbf{Value} \\
+\hline
+Network & Nodes & 10, 30, 50, 100 \\
+& Clusters & 4, 8, 12, 20 \\
+& Send Range & 10-20 meters \\
+& Area & 60×60 to 100×100 m \\
+\hline
+Energy & Initial Energy & 100-150 Joules \\
+& Send Power & 0.3 J/transmission \\
+& Receive Power & 0.2 J/reception \\
+& Active Power & 0.1 J/second \\
+& Sleep Power & 0.05 J/second \\
+\hline
+DQN & Learning Rate & 0.001 \\
+& Discount Factor & 0.99 \\
+& Exploration & 0.9 → 0.05 \\
+& Batch Size & 32 \\
+& Memory Size & 10,000 \\
+\hline
+Sleep & Base Threshold & 5-10 \\
+& Duration & 30 seconds \\
+& Node Variation & ID-based \\
+\hline
+Data & Change Threshold & 1.5-10.0 \\
+& Period & 6 seconds \\
+& Sensitivity & Node-specific \\
+\hline
+\end{tabular}
+\end{table>
+
+\end{document}

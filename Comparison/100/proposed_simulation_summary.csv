@@ -1,0 +1,10 @@
+Metric,Value
+Number_of_Nodes,100.0
+Number_of_Clusters,40.0
+First_Death_Time,2215.0
+Last_Death_Time,3533.0
+Network_Lifetime,3533.0
+Final_Live_Percentage,0.0
+Total_Transmissions,270.0
+Average_Transmissions_per_Second,0.07640067911714771
+Simulation_Duration,3534.0
