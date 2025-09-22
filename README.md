@@ -1,4 +1,4 @@
-# PSR-DRL: Power Saving Wireless Routing with Deep Reinforcement Learning
+# PSR-DRL:  Power Saving Routing for Wireless Sensor Network using Deep Reinforcement Learning
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
@@ -8,7 +8,7 @@ A comprehensive thesis research project implementing **Deep Reinforcement Learni
 
 ## 🎯 Research Overview
 
-This thesis develops **PSR-DRL** (Power Saving Wireless Routing based on Deep Reinforcement Learning), addressing the critical challenge of energy optimization in resource-constrained wireless sensor networks. The system uses deep reinforcement learning algorithms to make intelligent routing decisions in real time that keep energy use balanced throughout the network, demonstrating exceptional scalability and performance improvements across diverse network configurations (10, 30, 50, and 100 nodes).
+This thesis develops **PSR-DRL** (Power Saving Routing for Wireless Sensor Network using Deep Reinforcement Learning), addressing the critical challenge of energy optimization in resource-constrained wireless sensor networks. The system uses deep reinforcement learning algorithms to make intelligent routing decisions in real time that keep energy use balanced throughout the network, demonstrating exceptional scalability and performance improvements across diverse network configurations (10, 30, 50, and 100 nodes).
 
 ### Key Achievements
 - **84.2% improvement** in First Node Death (FND) timing over RLBEEP (averaging across all network sizes)
